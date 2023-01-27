@@ -47,16 +47,20 @@ class Transaction:
 
 
 class Block:
-    def __init__(self, headerHash, transaction, clock):
+    def __init__(self, headerHash, transaction, clock, status=""):
         self.headerHash = headerHash
         self.transaction = transaction
         self.clock = clock
+        self.status = status
+
+    def status_update(self,status):
+        self.status=status
 
     def __str__(self):
-        return str(self.headerHash) + "| " + str(self.transaction) +  " | " + str(self.clock)
+        return str(self.headerHash) + "| " + str(self.transaction) + " | " + str(self.status) + " | " + str(self.clock)
 
 class BlockChain:
-    def __init__(self, ):
+    def __init__(self):
         self.data=[]
         self.length=0
         self.head_index=-1
@@ -68,9 +72,14 @@ class BlockChain:
             self.data[i].headerHash=headerHash
 
     def move(self):
+        print("Moving the header from sender ",  self.data[self.head_index].transaction.sender)
+        print("Header prev at {}".format(self.head_index))
         self.head_index+= 1
+
         if(self.head_index>=self.length):
             self.head_index=-1
+        
+        print("Header now is at {}".format(self.head_index))
         #some issue, please check
 
     def insertBLOCK(self, transaction, clock):
@@ -100,9 +109,10 @@ class BlockChain:
                 pos_ind+=1
             else:
                 break
-        
+        self.length+=1
         self.data.insert(pos_ind+1,block)
         self.updateBlockChain(pos_ind+1)
+        print("Header now is at {}".format(self.head_index))
 
     def insert(self, transaction, clock):
         self.insertBLOCK(transaction, clock)
