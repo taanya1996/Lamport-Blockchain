@@ -72,14 +72,14 @@ class BlockChain:
             self.data[i].headerHash=headerHash
 
     def move(self):
-        print("Moving the header from sender ",  self.data[self.head_index].transaction.sender)
-        print("Header prev at {}".format(self.head_index))
+        #print("Moving the header from sender ",  self.data[self.head_index].transaction.sender)
+        #print("Header prev at {}".format(self.head_index))
         self.head_index+= 1
 
         if(self.head_index>=self.length):
             self.head_index=-1
         
-        print("Header now is at {}".format(self.head_index))
+        #print("Header now is at {}".format(self.head_index))
         #some issue, please check
 
     def insertBLOCK(self, transaction, clock):
@@ -90,15 +90,15 @@ class BlockChain:
             self.data.append(block)
             self.length+=1
             self.head_index=self.length-1
-            print(str(block))
+            #print(str(block))
             return
         
         pos_ind=self.head_index
         block = Block("", transaction, clock)
         # to check if the priority of the new block is higher than head
-        print("Len of BlockChain:",len(self.data))
+        #print("Len of BlockChain:",len(self.data))
         for i in range(self.head_index,-1,-1):
-            print("i,head_index",i,self.head_index)
+            #print("i,head_index",i,self.head_index)
             if clock < self.data[i].clock:
                 pos_ind-=1
                 self.head_index=pos_ind+1
@@ -112,7 +112,7 @@ class BlockChain:
         self.length+=1
         self.data.insert(pos_ind+1,block)
         self.updateBlockChain(pos_ind+1)
-        print("Header now is at {}".format(self.head_index))
+        #print("Header now is at {}".format(self.head_index))
 
     def insert(self, transaction, clock):
         self.insertBLOCK(transaction, clock)
