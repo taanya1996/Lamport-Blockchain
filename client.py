@@ -61,18 +61,20 @@ class Connections(Thread):
                 lock.release()
                 
             if data.reqType == "REPLY":
-                print("REPLY recieved from " + str(data.fromPid) + " at " + str(data.clock))
-                print("MY CLOCK TIME Here is: ",str(myClock))
+                print("REPLY recieved from " + str(data.fromPid) + " at " + str(myClock))
+                #print("MY CLOCK TIME Here is: ",str(myClock))
                 sleep()
                 lock.acquire()
                 replyCount += 1
                 print("replycount:", replyCount, " head_index:",BCHAIN.head_index, " SenderPID:", BCHAIN.data[BCHAIN.head_index].transaction.sender)
                 if  BCHAIN.data[BCHAIN.head_index].transaction.sender ==  pid and replyCount == 2:
                     print("Acquired Lock")
+                    '''
                     print("Local Queue:")
                     for i in range(BCHAIN.head_index, len(BCHAIN.data)):
                         print("CLOCK: {} Transaction: SENDER|RECEIVER|AMT : {}".format(BCHAIN.data[i].clock, BCHAIN.data[i].transaction))
-                    print("Executing Transaction inside reply")
+                    print("Executing Transaction")
+                       '''
                     self.handle_transaction()
                     #once the transaction is executed, lock should be released i.e move the head pointer
                     replyCount = 0
@@ -85,11 +87,13 @@ class Connections(Thread):
                 lock.acquire()
                 BCHAIN.move()
                 if BCHAIN.head_index!=-1 and BCHAIN.data[BCHAIN.head_index].transaction.sender ==  pid and replyCount == 2:
+                    '''
                     print("Local Queue:")
                     for i in range(BCHAIN.head_index, len(BCHAIN.data)):
                         print("i", i)
                         print("CLOCK: {} Transaction: SENDER|RECEIVER|AMT : {}".format(BCHAIN.data[i].clock, BCHAIN.data[i].transaction))
                     print("Executing Transaction inside release")
+                    '''
                     self.handle_transaction()
                     replyCount = 0
                     transactionFlag = True
@@ -98,7 +102,7 @@ class Connections(Thread):
                     
                     
     def handle_transaction(self): 
-        print("Handling transaction inside method handle_transaction")
+        print("Handling transaction")
         transaction=BCHAIN.data[BCHAIN.head_index].transaction
         sleep()
         print("Requesting sender Balance from Server")
@@ -110,6 +114,7 @@ class Connections(Thread):
         sleep()
         print("======================================")
         print("Balance before transaction " + str(balance))
+        print("======================================")
 
         if int(balance)>= int(transaction.amount):
             #continue with transaction
@@ -118,6 +123,7 @@ class Connections(Thread):
             trans_receipt= pickle.loads(client_connections[0].recv(buff_size))
             print("Transaction was " + str(trans_receipt))
             print("Balance after transaction is: ", int(balance)-int(transaction.amount))
+            print("======================================")
             # to be filled here
         else:
             #abort the transaction
@@ -189,7 +195,7 @@ def main():
     global client_connections
     global BCHAIN
 
-    client_id= int(input("enter client id in range [1,2,3]"))
+    client_id= int(input("enter client id in range [1,2,3]\n"))
     
     if(client_id not in CLIENT_RANGE):
         print("Enter valid client ID")
@@ -354,7 +360,7 @@ def main():
 
             print("Current clock of process " + str(pid) + " is " + str(myClock))
             transaction=Transaction(sender,receiver,amt)
-            print("printing transaction to be made,", transaction)
+            print("Transaction", transaction)
             replyCount = 0
             # is insert happening correctly
             BCHAIN.insert(transaction=transaction, clock=myClock.copy())
