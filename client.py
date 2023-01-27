@@ -5,8 +5,9 @@ import heapq
 import hashlib
 import time
 
-from threading import Thread
+from threading import Thread, Lock
 from common import *
+
 
 HOST = "127.0.0.1"  # The server's hostname or IP address
 SERVER_PORT = 65432  # The port used by the server
@@ -21,6 +22,7 @@ replyCount=0
 myClock=LamportClock(0,0)
 BCHAIN=BlockChain()
 reqClock = LamportClock(0,0)
+lock=Lock()
 
 class Connections(Thread):
     def __init__(self,connection):
@@ -45,6 +47,7 @@ class Connections(Thread):
             #print("Current clock of process " + str(pid) + " is " + str(myClock))
             
             if data.reqType == "MUTEX":
+                lock.acquire()
                 #requestPriorityQueue.append(LamportClock(data.reqClock.clock, data.reqClock.pid))
                 #heapq.heapify(requestPriorityQueue)
                 print("REQUEST recieved from " + str(data.fromPid) + " at " + str(myClock))
@@ -55,37 +58,43 @@ class Connections(Thread):
                 #print("Current clock of process " + str(pid) + " is " + str(myClock))
                 reply = RequestMessage(pid, myClock, "REPLY")
                 self.connection.send(pickle.dumps(reply))
+                lock.release()
                 
             if data.reqType == "REPLY":
                 print("REPLY recieved from " + str(data.fromPid) + " at " + str(data.clock))
                 print("MY CLOCK TIME Here is: ",str(myClock))
-                replyCount += 1
                 sleep()
-                if replyCount == 2 and BCHAIN.data[BCHAIN.head_index].transaction.sender == pid:
+                lock.acquire()
+                replyCount += 1
+                print("replycount:", replyCount, " head_index:",BCHAIN.head_index, " SenderPID:", BCHAIN.data[BCHAIN.head_index].transaction.sender)
+                if  BCHAIN.data[BCHAIN.head_index].transaction.sender ==  pid and replyCount == 2:
                     print("Acquired Lock")
                     print("Local Queue:")
                     for i in range(BCHAIN.head_index, len(BCHAIN.data)):
                         print("CLOCK: {} Transaction: SENDER|RECEIVER|AMT : {}".format(BCHAIN.data[i].clock, BCHAIN.data[i].transaction))
-                    print("Executing Transaction")
+                    print("Executing Transaction inside reply")
                     self.handle_transaction()
                     #once the transaction is executed, lock should be released i.e move the head pointer
                     replyCount = 0
                     transactionFlag = True
-            
+                lock.release()
+
             if data.reqType == "RELEASE":
-                print("Release received")
-                print("Local Queue:")
-                for i in range(BCHAIN.head_index, len(BCHAIN.data)):
-                    print("i", i)
-                    print("CLOCK: {} Transaction: SENDER|RECEIVER|AMT : {}".format(BCHAIN.data[i].clock, BCHAIN.data[i].transaction))
                 print("RELEASE recieved from " + str(data.fromPid) + " at " + str(myClock))
-                BCHAIN.move()
                 sleep()
-                if BCHAIN.head_index<len(BCHAIN.data) and BCHAIN.data[BCHAIN.head_index].transaction.sender ==  pid and replyCount == 2:
-                    print("Executing Transaction")
+                lock.acquire()
+                BCHAIN.move()
+                if BCHAIN.head_index!=-1 and BCHAIN.data[BCHAIN.head_index].transaction.sender ==  pid and replyCount == 2:
+                    print("Local Queue:")
+                    for i in range(BCHAIN.head_index, len(BCHAIN.data)):
+                        print("i", i)
+                        print("CLOCK: {} Transaction: SENDER|RECEIVER|AMT : {}".format(BCHAIN.data[i].clock, BCHAIN.data[i].transaction))
+                    print("Executing Transaction inside release")
                     self.handle_transaction()
                     replyCount = 0
                     transactionFlag = True
+                lock.release()
+                
                     
                     
     def handle_transaction(self): 
@@ -114,7 +123,6 @@ class Connections(Thread):
             #abort the transaction
             print("Insufficient Balance, transaction Aborted")
             print("======================================")
-
         BCHAIN.move()
         broadcast("RELEASE", transaction=transaction, clock=myClock)
 
