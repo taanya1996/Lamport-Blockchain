@@ -50,7 +50,7 @@ class Connections(Thread):
                 myClock.updateClock(data.clock)
                 print("Clock updated to: ",str(myClock))
                 BCHAIN.insert(transaction=data.transaction, clock=data.clock)
-                sleep()
+                sleep()  
                 print("REPLY sent to " + str(data.fromPid) + " at " + str(myClock))
                 #print("Current clock of process " + str(pid) + " is " + str(myClock))
                 reply = RequestMessage(pid, myClock, "REPLY")
