@@ -19,7 +19,7 @@ transactionFlag = False
 user_input = ""
 buff_size=1024
 replyCount=0
-myClock=LamportClock(0,0)
+myClock=LaClock(0,0)
 BCHAIN=BlockChain()
 lock=Lock()
 
@@ -74,8 +74,8 @@ class Connections(Thread):
                         print("CLOCK: {} Transaction: SENDER|RECEIVER|AMT : {}".format(BCHAIN.data[i].clock, BCHAIN.data[i].transaction))
                     print("Executing Transaction")
                        '''
-                    self.handle_transaction()
-                    #once the transaction is executed, lock should be released i.e move the head pointer
+                    self.handle_transfer()
+                    #once the transaction is executed, lock should be released i.e shift the head pointer
                     replyCount = 0
                     transactionFlag = True
                 lock.release()
@@ -87,7 +87,7 @@ class Connections(Thread):
                 sleep()
                 lock.acquire()
                 BCHAIN.data[BCHAIN.head_index].status_update(data.status)
-                BCHAIN.move()
+                BCHAIN.shift()
                 if BCHAIN.head_index!=-1 and BCHAIN.data[BCHAIN.head_index].transaction.sender ==  pid and replyCount == 2:
                     '''
                     print("Local Queue:")
@@ -96,14 +96,14 @@ class Connections(Thread):
                         print("CLOCK: {} Transaction: SENDER|RECEIVER|AMT : {}".format(BCHAIN.data[i].clock, BCHAIN.data[i].transaction))
                     print("Executing Transaction inside release")
                     '''
-                    self.handle_transaction()
+                    self.handle_transfer()
                     replyCount = 0
                     transactionFlag = True
                 lock.release()
                 
                     
                     
-    def handle_transaction(self): 
+    def handle_transfer(self): 
         print("Handling transaction")
         transaction=BCHAIN.data[BCHAIN.head_index].transaction
         sleep()
@@ -134,8 +134,8 @@ class Connections(Thread):
             print("======================================")
             status="ABORT"
         BCHAIN.data[BCHAIN.head_index].status_update(status)
-        BCHAIN.move()
-        broadcast("RELEASE", transaction=transaction, clock=myClock,status=status)
+        BCHAIN.shift()
+        broadcast_msg("RELEASE", transaction=transaction, clock=myClock,status=status)
 
 def sleep():
     time.sleep(3)
@@ -146,10 +146,10 @@ class RequestMessage:
         self.fromPid = fromPid
         self.clock = clock
         self.reqType = reqType
-        self.transaction=transaction
+        self.transaction = transaction
         self.status = status
         
-def sendRequest(client, reqType, clock=None, transaction=None, status=None):
+def send_req(client, reqType, clock=None, transaction=None, status=None):
     #myClock.incrementClock()
     #print("Current clock of process " + str(pid) + " is " + str(myClock))
     sleep()
@@ -176,16 +176,16 @@ def closeSockets():
         client_connections[1].close()
         client_connections[2].close()    
             
-def broadcast(reqType, transaction=None, status=None, clock=myClock):
+def broadcast_msg(reqType, transaction=None, status=None, clock=myClock):
     if pid == 1:
-        sendRequest(2,reqType, clock, transaction, status)
-        sendRequest(3,reqType, clock, transaction, status)
+        send_req(2,reqType, clock, transaction, status)
+        send_req(3,reqType, clock, transaction, status)
     elif pid == 2:
-        sendRequest(1,reqType, clock, transaction, status)
-        sendRequest(3,reqType, clock, transaction, status)
+        send_req(1,reqType, clock, transaction, status)
+        send_req(3,reqType, clock, transaction, status)
     elif pid == 3:
-        sendRequest(1,reqType, clock, transaction, status)
-        sendRequest(2,reqType, clock, transaction, status)
+        send_req(1,reqType, clock, transaction, status)
+        send_req(2,reqType, clock, transaction, status)
             
 
 
@@ -216,7 +216,7 @@ def main():
     
     print("Initiating the connection to server")
 
-    myClock = LamportClock(0,pid)
+    myClock = LaClock(0,pid)
 
     try:
         c_socket.connect((HOST, SERVER_PORT))
@@ -369,7 +369,7 @@ def main():
             # is insert happening correctly
             BCHAIN.insert(transaction=transaction, clock=myClock.copy())
             # good to send clock from here only
-            broadcast("MUTEX", transaction=transaction, clock=myClock.copy())
+            broadcast_msg("MUTEX", transaction=transaction, clock=myClock.copy())
             while transactionFlag == False:
                 time.sleep(1)
         
