@@ -2,8 +2,7 @@
 
 CMPSC 271 Programming assignment 1. 
 
-For the implementation of Lamport Algorithm, it is essential to have TCP connection as we have to make sure that all the Lamport MUTEX request, reply and release has 
-to be delivered to the peer clients and with the successful delivery of messages, the client can make decision to acquire the lock and perform the transaction. <br />
+For the implementation of Lamport Algorithm, it is essential to have TCP connection as we have to make sure that all the Lamport MUTEX request, reply and release has to be delivered to the peer clients and with the successful delivery of messages, the client can make decision to acquire the lock and perform the transaction. UDP doesn't guarantee the delivery. <br />
 
 To run server:  <br />
 python3 server.py  <br />
