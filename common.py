@@ -8,7 +8,7 @@ class RequestMessage:
         self.reqClock = reqClock
         self.block = block
 
-class LamportClock:
+class LaClock:
     def __init__(self, clock, pid):
         self.clock = clock
         self.pid = pid
@@ -17,7 +17,7 @@ class LamportClock:
         self.clock += 1
     
     def copy(self):
-        return LamportClock(self.clock, self.pid)
+        return LaClock(self.clock, self.pid)
 
     def __lt__(self, other):
         if self.clock < other.clock:
@@ -71,7 +71,7 @@ class BlockChain:
             headerHash = hashlib.sha256(prevHashData.encode()).digest()
             self.data[i].headerHash=headerHash
 
-    def move(self):
+    def shift(self):
         #print("Moving the header from sender ",  self.data[self.head_index].transaction.sender)
         #print("Header prev at {}".format(self.head_index))
         self.head_index+= 1
